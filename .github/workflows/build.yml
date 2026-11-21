@@ -47,9 +47,18 @@ jobs:
       - name: Smoke test (window, WebGL, local server)
         shell: pwsh
         run: |
+          # default start (automatic = Direct3D 11) must draw the generated test model; the other backends are
+          # tried too and reported (the runner has no OpenGL driver, so 'gl' may fail there)
           $p = Start-Process -FilePath dist\DW3_DW2003_Viewer\DW3_DW2003_Viewer.exe -ArgumentList '--smoke-test=smoke.json' -PassThru -Wait
           Get-Content smoke.json
-          if ($p.ExitCode -ne 0) { exit 1 }
+          $code = $p.ExitCode
+          foreach ($b in 'd3d11', 'gl', 'd3d11on12', 'swiftshader') {
+            $q = Start-Process -FilePath dist\DW3_DW2003_Viewer\DW3_DW2003_Viewer.exe -ArgumentList "--smoke-test=smoke_$b.json", "--angle=$b" -PassThru -Wait
+            Write-Host "== $b exit $($q.ExitCode)"; if (Test-Path "smoke_$b.json") { Get-Content "smoke_$b.json" }
+            Get-Content "$env:LOCALAPPDATA\DW3-DW2003-Viewer\logs\viewer.log" -ErrorAction SilentlyContinue | Select-Object -Last 15
+          }
+          Get-ChildItem "$env:LOCALAPPDATA\DW3-DW2003-Viewer\logs" -ErrorAction SilentlyContinue
+          if ($code -ne 0) { exit 1 }
       - name: Package
         shell: pwsh
         run: |
@@ -63,6 +72,7 @@ jobs:
             DW3_DW2003_Viewer_Windows_x64.zip
             SHA256SUMS.txt
             smoke.json
+            smoke_*.json
   release:
     # publishes the tested Windows package as a GitHub release (never replaces an existing one): a pushed tag v*,
     # or a manual run with the input "release"

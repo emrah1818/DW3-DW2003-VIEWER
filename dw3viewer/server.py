@@ -34,6 +34,8 @@ class API:
         self.lib = None
         self.picker = picker          # desktop: callable(kind, suggestion) -> path or None
         self.lock = threading.Lock()
+        self.gpu = None                 # desktop: gpu.Graphics
+        self.restart_cb = None
 
     # -- helpers
     def _lib(self):
@@ -50,7 +52,27 @@ class API:
 
     # -- methods
     def app_info(self):
-        return {'version': __version__, 'data_dir': str(self.data), 'desktop': self.picker is not None}
+        return {'version': __version__, 'data_dir': str(self.data), 'desktop': self.picker is not None,
+                'gpu': self.gpu.info() if self.gpu else None}
+
+    def gpu_mark(self, what, gl=None):
+        if self.gpu and what in ('drawing', 'drawn', 'ready'):
+            self.gpu.mark(what, gl)
+        return True
+
+    def gpu_set(self, choice, restart=False):
+        if not self.gpu:
+            raise ValueError('Nur im Programmfenster verfügbar.')
+        self.gpu.set_choice(choice)
+        if restart and self.restart_cb:
+            self.gpu.clean_exit()
+            self.restart_cb()
+        return self.gpu.info()
+
+    def log_client(self, level, text):
+        import logging
+        logging.getLogger('dw3viewer.ui').log(logging.ERROR if level == 'error' else logging.INFO, '%s', str(text)[:4000])
+        return True
 
     def open(self, path=None):
         path = self._pick('disc', path)
@@ -164,7 +186,7 @@ class API:
         Path(dest).write_bytes(base64.b64decode(data_url.split(',', 1)[1]))
         return str(dest)
 
-    METHODS = ('app_info', 'open', 'summary', 'catalog', 'model', 'export', 'geometry', 'hd_list', 'hd_import', 'hd_remove', 'save_png', 'save_thumb')
+    METHODS = ('app_info', 'open', 'summary', 'catalog', 'model', 'export', 'geometry', 'hd_list', 'hd_import', 'hd_remove', 'save_png', 'save_thumb', 'gpu_mark', 'gpu_set', 'log_client')
 
 
 def make_server(api, host='127.0.0.1', port=0):
@@ -218,10 +240,14 @@ def make_server(api, host='127.0.0.1', port=0):
                 args = json.loads(self.rfile.read(n) or b'[]') if n else []
                 if not isinstance(args, list):
                     raise ValueError('Argumente müssen eine Liste sein')
+                if name in ('open', 'model', 'export'):
+                    import logging
+                    logging.getLogger('dw3viewer.api').info('%s %s', name, args[:2])
                 result = getattr(api, name)(*args)
                 body = {'ok': True, 'data': result}
             except Exception as e:  # report every failure to the interface, keep serving
-                traceback.print_exc()
+                import logging
+                logging.getLogger('dw3viewer.api').warning('%s%s fehlgeschlagen', name, tuple(args) if 'args' in dir() else '', exc_info=True)
                 body = {'ok': False, 'error': str(e) or e.__class__.__name__}
             self._send(200, json.dumps(body, ensure_ascii=False).encode('utf-8'))
 

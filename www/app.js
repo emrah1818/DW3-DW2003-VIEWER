@@ -9,7 +9,7 @@ const T = {
     f_all: 'Alle Modelle', f_partner: 'Partner', f_enemy: 'Gegner', f_other: 'Ohne Kämpfer',
     hint: 'Öffne dein eigenes Abbild von Digimon World 3 (USA) oder Digimon World 2003 (PAL). Es werden keine Spieldaten mitgeliefert.',
     loading: 'Modell wird gelesen …', m_orig: 'Original', m_hd: 'HD', nearest: 'PS1-Pixel (nearest)', wire: 'Drahtgitter',
-    grid: 'Gitter', cull: 'Rückseiten ausblenden', skel: 'Skelett', faceopt: 'Gesicht', bg: 'Hintergrund', center: 'Zentrieren', shot: 'Bild speichern',
+    grid: 'Gitter', cull: 'Rückseiten ausblenden', skel: 'Skelett', faceopt: 'Gesicht', gpu: 'Grafik', gpu_auto: 'Automatisch', gpu_now: 'Aktiv', gpu_restart: 'Die Grafikschnittstelle wird beim Neustart gewechselt. Jetzt neu starten?', gpu_switched: 'Der letzte Start ist beim Zeichnen abgestürzt. Grafik wurde automatisch auf %s umgestellt.', bg: 'Hintergrund', center: 'Zentrieren', shot: 'Bild speichern',
     speed: 'Tempo', loop: 'Schleife', t_info: 'Info', t_anim: 'Animationen', t_tex: 'Texturen', t_exp: 'Export',
     noselect: 'Kein Modell gewählt.', compare: 'Vergleichen mit',
     hdnote: 'HD: eigene PNG je Texturseite, beliebige Größe (z. B. 2048 × 4096), ohne Farbreduzierung. Wird für dieses Modell gespeichert und beim nächsten Öffnen wieder geladen.',
@@ -36,7 +36,7 @@ const T = {
     f_all: 'All models', f_partner: 'Partners', f_enemy: 'Enemies', f_other: 'No fighter',
     hint: 'Open your own disc image of Digimon World 3 (USA) or Digimon World 2003 (PAL). No game data is included.',
     loading: 'Reading model …', m_orig: 'Original', m_hd: 'HD', nearest: 'PS1 pixels (nearest)', wire: 'Wireframe',
-    grid: 'Grid', cull: 'Hide back faces', skel: 'Skeleton', faceopt: 'Face', bg: 'Background', center: 'Center', shot: 'Save image',
+    grid: 'Grid', cull: 'Hide back faces', skel: 'Skeleton', faceopt: 'Face', gpu: 'Graphics', gpu_auto: 'Automatic', gpu_now: 'Active', gpu_restart: 'The graphics backend changes on restart. Restart now?', gpu_switched: 'The last start crashed while drawing. Graphics were switched automatically to %s.', bg: 'Background', center: 'Center', shot: 'Save image',
     speed: 'Speed', loop: 'Loop', t_info: 'Info', t_anim: 'Animations', t_tex: 'Textures', t_exp: 'Export',
     noselect: 'No model selected.', compare: 'Compare with',
     hdnote: 'HD: your own PNG per texture page, any size (e.g. 2048 × 4096), no colour reduction. Saved for this model and loaded again next time.',
@@ -150,7 +150,9 @@ async function select(id) {
     const r = await api('model', id);
     if (seq !== S.loadSeq) return;
     S.meta = r.meta; S.base = r.base; S.hd = r.hd;
+    if (!S.gpuDrawn) { try { await api('gpu_mark', 'drawing', view.glInfo()); } catch {} }   // written before the first draw
     await view.load(S.base + 'model.glb', S.meta);
+    if (!S.gpuDrawn) { S.gpuDrawn = true; setTimeout(() => api('gpu_mark', 'drawn').catch(() => {}), 2000); }
     if (seq !== S.loadSeq) return;
     $('#msg').classList.add('hidden');
     await applyHd();
@@ -419,7 +421,24 @@ document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
 $('#lang').onchange = () => { lang = $('#lang').value; try { localStorage.setItem('lang', lang); } catch {} applyLang(); };
 try { const bg = localStorage.getItem('bg'); if (bg) { $('#o-bg').value = bg; view.setBackground(bg); } } catch {}
 applyLang();
-window.__viewer.ready = api('app_info').then(info => { window.__viewer.info = info; document.title = `DW3 / DW2003 Viewer ${info.version}`; return info; });
+window.__viewer.ready = api('app_info').then(info => {
+  window.__viewer.info = info; document.title = `DW3 / DW2003 Viewer ${info.version}`;
+  const g = info.gpu, sel = $('#o-gpu');
+  if (g && sel) {
+    sel.innerHTML = g.choices.map(c => `<option value="${c.id}"${c.id === g.choice ? ' selected' : ''}>${esc(c.id === 'auto' ? `${t('gpu_auto')} (${g.label})` : c.label)}</option>`).join('');
+    sel.parentElement.classList.remove('hidden');
+    sel.title = `${t('gpu_now')}: ${g.label}`;
+    sel.onchange = async () => {
+      if (!confirm(t('gpu_restart'))) { sel.value = g.choice; return; }
+      try { await api('gpu_set', sel.value, true); } catch (e) { toast(e.message, true); }
+    };
+    if (g.switched_from) toast(t('gpu_switched').replace('%s', g.label), true);
+    api('gpu_mark', 'ready', view.glInfo()).catch(() => {});
+  }
+  return info;
+});
+window.addEventListener('error', e => api('log_client', 'error', `${e.message} @ ${e.filename}:${e.lineno}`).catch(() => {}));
+window.addEventListener('unhandledrejection', e => api('log_client', 'error', String(e.reason && (e.reason.stack || e.reason))).catch(() => {}));
 window.__viewer.openDisc = openDisc;
 window.__viewer.select = select;
 window.__viewer.playMotion = playMotion;

@@ -224,3 +224,20 @@ def test_motion_labels_scripts_and_neutral():
     l = label(20, [{'index': 3, 'motions': [20]}, {'index': 99, 'motions': [20]}])
     assert l['scripts'] == [3, 99] and 'Script 99' in l['en'] and l['source']
     assert label(40, [{'index': 3, 'motions': [20]}])['en'] == 'Motion 40'
+
+
+def test_graphics_falls_back_after_crash_while_drawing(tmp_path):
+    from dw3viewer.gpu import Graphics, FALLBACK
+    g = Graphics(tmp_path)
+    assert g.backend == FALLBACK[0]
+    g.mark('ready')
+    g2 = Graphics(tmp_path)                       # unclean end before any model was drawn: no switch
+    assert g2.backend == FALLBACK[0] and g2.switched_from is None
+    g2.mark('drawing')                            # crash while drawing
+    g3 = Graphics(tmp_path)
+    assert g3.backend == FALLBACK[1] and g3.switched_from == FALLBACK[0]
+    g3.mark('drawing'); g3.mark('drawn'); g3.clean_exit()
+    assert Graphics(tmp_path).backend == FALLBACK[1]          # a working backend is kept
+    Graphics(tmp_path).set_choice(FALLBACK[0])
+    assert Graphics(tmp_path).backend == FALLBACK[0]
+    assert Graphics(tmp_path, forced='swiftshader').backend == 'swiftshader'

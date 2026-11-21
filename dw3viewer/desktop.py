@@ -13,7 +13,8 @@ from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 from . import __version__
-from .server import API, make_server
+from .gpu import Graphics, setup_logging, log
+from .server import API, make_server, user_dir
 
 GERMAN = (QLocale.system().uiLanguages() or ['en'])[0].lower().startswith('de')
 TXT = {
@@ -64,12 +65,14 @@ class Picker(QObject):
 
 
 class Window(QMainWindow):
-    def __init__(self, smoke=None):
+    def __init__(self, smoke=None, gpu=None, restart=None):
         super().__init__()
         self.setWindowTitle(f'DW3 / DW2003 Viewer {__version__}')
         self.resize(1500, 920)
         self.picker = Picker(self)
         self.api = API(picker=self.picker)
+        self.api.gpu = gpu
+        self.api.restart_cb = restart
         self.server = make_server(self.api)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         profile = QWebEngineProfile('DW3Viewer', self)
@@ -77,6 +80,8 @@ class Window(QMainWindow):
         self.page = QWebEnginePage(profile, self.view)
         self.view.setPage(self.page)
         self.setCentralWidget(self.view)
+        self.page.renderProcessTerminated.connect(
+            lambda status, code: log.error('Darstellungsprozess beendet: %s, Code %s', status, code))
         full = QAction('Vollbild' if GERMAN else 'Full screen', self)
         full.setShortcut('F11')
         full.triggered.connect(lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen())
@@ -88,9 +93,17 @@ class Window(QMainWindow):
     def _loaded(self, ok):
         if not self.smoke:
             return
-        start = """window.__smoke = ''; (async () => { try { await window.__viewer.ready;
-            window.__smoke = JSON.stringify({ok: true, gl: window.__viewer.view.glInfo(), version: window.__viewer.info.version}); }
-            catch (e) { window.__smoke = JSON.stringify({ok: false, error: String(e)}); } })(); 1"""
+        start = """window.__smoke = ''; (async () => { try { const v = window.__viewer; await v.ready;
+            const gl = v.view.renderer.getContext();
+            await v.view.load('test/model.glb', {textures: [{file: 'tex0.png', width: 64, height: 64}], face: {parts: []}, motions: [], bones: []});
+            const inst = v.view.a, clip = [...inst.clips.values()][0];
+            inst.mixer.clipAction(clip).play(); v.view.playing = true;
+            await new Promise(r => setTimeout(r, 1500));
+            const err = gl.getError(), info = v.view.renderer.info;
+            window.__smoke = JSON.stringify({ok: err === 0 && info.render.calls > 0, gl: v.view.glInfo(), version: v.info.version,
+                gpu: v.info.gpu, drew: {calls: info.render.calls, triangles: info.render.triangles, glError: err,
+                textures: info.memory.textures, semi: [...inst.semiModes]}}); }
+            catch (e) { window.__smoke = JSON.stringify({ok: false, error: String(e && e.stack || e)}); } })(); 1"""
         self.page.runJavaScript(start, 0, lambda _r: QTimer.singleShot(300, lambda: self._poll(ok)))
 
     def _poll(self, ok):
@@ -119,16 +132,35 @@ class Window(QMainWindow):
 def main(argv=None):
     argv = list(sys.argv if argv is None else argv)
     smoke = next((a.split('=', 1)[1] for a in argv if a.startswith('--smoke-test=')), None)
+    forced = next((a.split('=', 1)[1] for a in argv if a.startswith('--angle=')), None)
     import os
-    if smoke or os.environ.get('DW3_SOFTWARE_GL'):
-        # build machines and PCs without a working GPU driver: WebGL through SwiftShader
-        os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = (os.environ.get('QTWEBENGINE_CHROMIUM_FLAGS', '')
-                                                   + ' --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist').strip()
+    data = user_dir()
+    data.mkdir(parents=True, exist_ok=True)
+    logs = setup_logging(data)
+    if os.environ.get('DW3_SOFTWARE_GL') and not forced:
+        forced = 'swiftshader'      # PCs without a working GPU driver
+    gpu = Graphics(data, forced)
+    log.info('DW3 / DW2003 Viewer %s, Python %s, %s; Grafik %s (Wahl %s)', __version__, sys.version.split()[0],
+             sys.platform, gpu.backend, gpu.choice)
+    flags = os.environ.get('QTWEBENGINE_CHROMIUM_FLAGS', '').split() + gpu.chromium_flags(logs)
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = ' '.join(flags)
+    log.info('Chromium-Schalter: %s', os.environ['QTWEBENGINE_CHROMIUM_FLAGS'])
+
+    from PyQt6.QtCore import qInstallMessageHandler, QProcess
+    qInstallMessageHandler(lambda mode, ctx, msg: log.info('Qt: %s', msg))
     app = QApplication(argv)
     app.setApplicationName('DW3 DW2003 Viewer')
-    w = Window(smoke)
+
+    def restart():
+        args = [a for a in argv[1:] if not a.startswith('--angle=')]
+        QTimer.singleShot(0, lambda: (QProcess.startDetached(sys.executable, args if getattr(sys, 'frozen', False) else [argv[0]] + args),
+                                      app.quit()))
+    w = Window(smoke, gpu, restart)
     app.aboutToQuit.connect(w.cleanup)
+    app.aboutToQuit.connect(gpu.clean_exit)
     w.show()
     if smoke:
         QTimer.singleShot(60000, lambda: app.exit(2))
-    return app.exec()
+    code = app.exec()
+    log.info('Beendet mit Code %s', code)
+    return code
