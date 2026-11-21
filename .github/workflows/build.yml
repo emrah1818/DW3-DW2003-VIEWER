@@ -1,0 +1,49 @@
+name: Test and build DW3 / DW2003 Viewer
+# Tests without game data, the converter, and the Windows x64 package (smoke-tested on the runner).
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python tools/build_native.py
+      - run: python -m pytest -q
+      - run: node --check www/app.js && node --check www/view3d.js
+  windows:
+    needs: tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - run: python -m pip install -r requirements.txt "pyinstaller>=6.12,<7"
+      - run: python tools/build_native.py
+      - run: python -m PyInstaller --noconfirm --clean DW3_DW2003_Viewer.spec
+      - name: Smoke test (window, WebGL, local server)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\DW3_DW2003_Viewer\DW3_DW2003_Viewer.exe -ArgumentList '--smoke-test=smoke.json' -PassThru -Wait
+          Get-Content smoke.json
+          if ($p.ExitCode -ne 0) { exit 1 }
+      - name: Package
+        shell: pwsh
+        run: |
+          Copy-Item README.md, ARCHITECTURE.md, DEVELOPMENT_LOG.md, RESEARCH.md dist\DW3_DW2003_Viewer\
+          Compress-Archive -Path dist\DW3_DW2003_Viewer -DestinationPath DW3_DW2003_Viewer_Windows_x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DW3_DW2003_Viewer_Windows_x64
+          path: |
+            DW3_DW2003_Viewer_Windows_x64.zip
+            smoke.json

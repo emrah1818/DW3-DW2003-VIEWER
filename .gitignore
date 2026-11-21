@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+build/
+dist/
+native/bin/
+*.bin
+*.cue
+*.iso
+*.img
+*.7z
+smoke*.json

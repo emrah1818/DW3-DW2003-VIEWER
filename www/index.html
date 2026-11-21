@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>DW3 / DW2003 Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:,">
+<script type="importmap">{"imports": {"three": "./lib/three.module.js"}}</script>
+</head>
+<body>
+<header>
+  <div class="brand">DW3 / DW2003 <span>Viewer</span></div>
+  <button id="b-open" class="primary" data-t="open">Abbild öffnen …</button>
+  <div id="game" class="game" data-t="nodisc">Kein Abbild geöffnet</div>
+  <div class="spacer"></div>
+  <label class="small"><span data-t="lang">Sprache</span>
+    <select id="lang"><option value="de">Deutsch</option><option value="en">English</option></select></label>
+</header>
+<main>
+  <aside id="left">
+    <input id="q" type="search" data-tp="search" placeholder="Name, Kürzel oder Nummer …" autocomplete="off">
+    <select id="filter">
+      <option value="all" data-t="f_all">Alle Modelle</option>
+      <option value="partner" data-t="f_partner">Partner</option>
+      <option value="enemy" data-t="f_enemy">Gegner</option>
+      <option value="other" data-t="f_other">Ohne Kämpfer</option>
+    </select>
+    <div id="count" class="small dim"></div>
+    <div id="list" tabindex="0"></div>
+  </aside>
+  <section id="center">
+    <div id="stage"><canvas id="c"></canvas>
+      <div id="msg" class="msg" data-t="hint">Öffne dein eigenes Abbild von Digimon World 3 (USA) oder Digimon World 2003 (PAL). Es werden keine Spieldaten mitgeliefert.</div>
+      <div id="busy" class="busy hidden" data-t="loading">Modell wird gelesen …</div>
+    </div>
+    <div id="tools">
+      <div class="seg" id="mode"><button data-v="orig" class="on" data-t="m_orig">Original</button><button data-v="hd" data-t="m_hd">HD</button></div>
+      <label><input type="checkbox" id="o-nearest" checked> <span data-t="nearest">PS1-Pixel (nearest)</span></label>
+      <label><input type="checkbox" id="o-wire"> <span data-t="wire">Drahtgitter</span></label>
+      <label><input type="checkbox" id="o-grid" checked> <span data-t="grid">Gitter</span></label>
+      <label><input type="checkbox" id="o-cull"> <span data-t="cull">Rückseiten ausblenden</span></label>
+      <label><input type="checkbox" id="o-skel"> <span data-t="skel">Skelett</span></label>
+      <label><span data-t="bg">Hintergrund</span> <input type="color" id="o-bg" value="#20242c"></label>
+      <button id="b-center" data-t="center">Zentrieren</button>
+      <button id="b-shot" data-t="shot">Bild speichern</button>
+    </div>
+    <div id="timeline">
+      <button id="t-prev" title="−1">⏮</button>
+      <button id="t-play" class="primary">▶</button>
+      <button id="t-next" title="+1">⏭</button>
+      <input type="range" id="t-pos" min="0" max="0" value="0">
+      <span id="t-frame" class="mono">0 / 0</span>
+      <span id="t-dur" class="mono dim"></span>
+      <label><span data-t="speed">Tempo</span>
+        <select id="t-speed"><option>0.1</option><option>0.25</option><option>0.5</option><option selected>1</option><option>1.5</option><option>2</option></select></label>
+      <label><input type="checkbox" id="t-loop" checked> <span data-t="loop">Schleife</span></label>
+    </div>
+  </section>
+  <aside id="right">
+    <nav class="tabs"><button data-tab="info" class="on" data-t="t_info">Info</button><button data-tab="anim" data-t="t_anim">Animationen</button><button data-tab="tex" data-t="t_tex">Texturen</button><button data-tab="exp" data-t="t_exp">Export</button></nav>
+    <div class="tab" id="tab-info"><div id="info" class="dim" data-t="noselect">Kein Modell gewählt.</div></div>
+    <div class="tab hidden" id="tab-anim">
+      <div id="anims"></div>
+      <div class="box"><label><input type="checkbox" id="cmp"> <span data-t="compare">Vergleichen mit</span></label>
+        <select id="cmp-motion" disabled></select></div>
+    </div>
+    <div class="tab hidden" id="tab-tex"><div id="texs"></div>
+      <p class="small dim" data-t="hdnote">HD: eigene PNG je Texturseite, beliebige Größe (z. B. 2048 × 4096), ohne Farbreduzierung. Wird für dieses Modell gespeichert und beim nächsten Öffnen wieder geladen.</p></div>
+    <div class="tab hidden" id="tab-exp">
+      <button data-exp="glb" data-t="e_glb">glTF/GLB (Skelett + alle Animationen)</button>
+      <button data-exp="obj" data-t="e_obj">OBJ + MTL + PNG (Ruhepose)</button>
+      <button data-exp="png" data-t="e_png">Texturen als PNG</button>
+      <button data-exp="motions" data-t="e_mot">Animationen als JSON (30 Bilder/s)</button>
+      <button data-exp="json" data-t="e_json">Technische Daten als JSON</button>
+      <button data-exp="hd" data-t="e_hd">HD-Texturen dieses Modells</button>
+      <div id="exp-msg" class="small dim"></div>
+    </div>
+  </aside>
+</main>
+<div id="toast" class="toast hidden"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
