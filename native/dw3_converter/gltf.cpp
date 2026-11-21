@@ -99,6 +99,11 @@ Trs decompose(const Mat &a) {
         o.q[i] = x, o.q[j] = (r[j][i] + r[i][j]) / (4 * x), o.q[k] = (r[k][i] + r[i][k]) / (4 * x), o.q[3] = (r[k][j] - r[j][k]) / (4 * x);
     }
     for (int i = 0; i < 3; i++) o.t[i] = a.m[12 + i];
+    /* DW3/DW2003 Viewer: glTF needs unit quaternions (a bone matrix with a collapsed or uneven scale gives one
+       that is not); the direction is kept */
+    float n = std::sqrt(o.q[0] * o.q[0] + o.q[1] * o.q[1] + o.q[2] * o.q[2] + o.q[3] * o.q[3]);
+    if (n > 1e-12f) for (int i = 0; i < 4; i++) o.q[i] /= n;
+    else o.q[0] = o.q[1] = o.q[2] = 0, o.q[3] = 1;
     return o;
 }
 
@@ -144,6 +149,7 @@ struct Writer {
         if (naccessors++) accessors << ",";
         accessors << "{\"bufferView\":" << nviews - 1 << ",\"componentType\":" << component << ",\"count\":" << count << ",\"type\":\"" << type << "\"";
         if (nlimits) {
+            accessors.precision(9); /* DW3/DW2003 Viewer: exact float32 limits (glTF-Validator ACCESSOR_MIN/MAX_MISMATCH) */
             accessors << ",\"min\":[";
             for (int i = 0; i < nlimits; i++) accessors << (i ? "," : "") << lo[i];
             accessors << "],\"max\":[";
@@ -224,7 +230,7 @@ bool export_gltf(const Model &model, const std::string &dir, const std::string &
         int img = (int)(std::find(imageIds.begin(), imageIds.end(), kv.first.first) - imageIds.begin());
         mats << (n ? "," : "") << "{\"name\":\"tex" << kv.first.first << (kv.first.second ? "_abr" + std::to_string(kv.first.second) : "")
              << "\",\"pbrMetallicRoughness\":{\"baseColorTexture\":{\"index\":" << img << "},\"metallicFactor\":0,\"roughnessFactor\":1},"
-             << "\"alphaMode\":\"" << (kv.first.second ? "BLEND" : "MASK") << "\",\"alphaCutoff\":0.5,\"doubleSided\":true,"
+             << "\"alphaMode\":\"" << (kv.first.second ? "BLEND\"," : "MASK\",\"alphaCutoff\":0.5,") << "\"doubleSided\":true,"
              << "\"extensions\":{\"KHR_materials_unlit\":{}}}";
         n++;
     }
@@ -295,7 +301,8 @@ bool export_gltf(const Model &model, const std::string &dir, const std::string &
             m.advance(1, true);
             m.evaluate();
         }
-        if (frames.size() < 2) continue;
+        if (frames.empty()) continue;
+        if (frames.size() == 1) frames.push_back(frames[0]); /* DW3/DW2003 Viewer: a one-frame motion (a pose) as a 1/30 s clip */
         int ns = (int)frames.size();
         std::vector<float> times(ns);
         for (int i = 0; i < ns; i++) times[i] = i / 30.0f;

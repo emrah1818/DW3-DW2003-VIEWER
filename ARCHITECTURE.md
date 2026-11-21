@@ -15,7 +15,8 @@
  │                  │    viewer)                  texN.png, native_source.json; --scripts für Skripte
  └──────┬───────────┘
  ┌──────▼───────────┐   dw3viewer/library.py    Details je Modell (meta.json): Zählungen, Texturen,
- │ Modell-Details   │   dw3viewer/motions.py      Motions mit Namen aus dem Code, ausgeblendete Knochen
+ │ Modell-Details   │   dw3viewer/motions.py      Motions mit Namen aus dem Code, ausgeblendete Knochen,
+ │                  │   dw3viewer/effects.py      Gesichtsteile (face_map), Effekttabelle, Knochen-Infos
  └──────┬───────────┘
  ┌──────▼───────────┐   dw3viewer/export.py     8 Export: GLB, OBJ+MTL+PNG, PNG, Motions-JSON, Metadaten
  │ Export / HD      │   dw3viewer/hd.py           HD-Texturen je Version und Modelldatei
@@ -33,6 +34,16 @@
  └──────────────────┘
 ```
 
+## Im Renderer (www/view3d.js)
+- `Instance`: ein geladenes Modell. Materialien mit `abr` bekommen eine Zwillingsmasche für den
+  halbtransparenten Durchgang; `patchMaterial` ergänzt den Shader um `uHidden[64]` (Knochen ausblenden,
+  vom Spiel oder vom Debug), `uSel` (Hervorhebung) und die PS1-Mischung.
+- `Face`: liest jede Texturseite einmal als RGBA-Bytes, kopiert Gesichtsrechtecke wie `face.c` und lädt nur die
+  geänderten Rechtecke hoch (`copyTextureToTexture`). Je Kopie und je Satz (Original/HD) eigener Zustand.
+- `dispose()`: gibt Geometrien, Materialien, Texturen und Skelette frei (Speichertest im UI-Test).
+- Server-Methoden für die Debug-Ansicht: `geometry(id)` (Flächen, UVs, Seite, abr je Knochen),
+  `save_thumb(id, png)` (Vorschaubild im Cache).
+
 ## Grundsätze
 - **Nur lesen.** Das Abbild wird nie geschrieben; der Cache liegt unter `%LOCALAPPDATA%\DW3-DW2003-Viewer`
   (Linux: `~/.local/share/dw3-dw2003-viewer`), je Abbild ein Ordner (Pfad, Größe, Änderungszeit als Schlüssel).
@@ -49,5 +60,4 @@
   gespeichert.
 - Import in den DW2-PC-Port: Der gleiche Konverter wird im DW2 Mod Studio dafür benutzt; der Viewer kann
   später Modelle direkt als Mod-Paket übergeben.
-- Weitere Modelle (Effekte, DNA-Formen), Gesichtsanimation, Kampfbühnen-Licht: im selben Ablauf über neue
-  Felder in `meta.json` und Schalter in der Oberfläche.
+- PAL und Kampfbühnen-Licht: im selben Ablauf über neue Felder in `meta.json` und Schalter in der Oberfläche.

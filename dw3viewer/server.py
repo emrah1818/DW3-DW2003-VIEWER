@@ -56,8 +56,16 @@ class API:
         path = self._pick('disc', path)
         if not path:
             return None
-        with self.lock:
-            self.lib = Library(path, self.data / 'cache')
+        try:
+            with self.lock:
+                self.lib = Library(path, self.data / 'cache')
+        except FileNotFoundError as e:
+            raise ValueError(f'Datei nicht gefunden: {e.filename or e}. Bei einer .cue muss die .bin daneben liegen.') from e
+        except ValueError as e:
+            msg = str(e)
+            if 'ISO9660' in msg or 'sector size' in msg.lower() or 'Sector outside' in msg or 'CD sector mode' in msg:
+                raise ValueError(f'Kein lesbares CD-Abbild ({msg}). Bitte die .cue oder .bin von Digimon World 3 wählen.') from e
+            raise
         return {'summary': self.lib.summary(), 'catalog': self.lib.catalog(), 'cache': self.lib.key}
 
     def summary(self):
@@ -78,13 +86,13 @@ class API:
         meta = lib.model(int(ident))
         folder = lib.folder(int(ident))
         stem = f"{meta['code']}_{''.join(c for c in meta['name'] if c.isalnum() or c in '-_') or 'model'}"
-        if kind in ('glb', 'json', 'motions'):
-            ext = {'glb': '.glb', 'json': '.json', 'motions': '.motions.json'}[kind]
+        if kind in ('glb', 'json', 'motions', 'debug'):
+            ext = {'glb': '.glb', 'json': '.json', 'motions': '.motions.json', 'debug': '.debug.json'}[kind]
             dest = self._pick('save:' + kind, dest, stem + ext)
             if not dest:
                 return None
             files = {'glb': lambda: export.glb(folder, dest), 'json': lambda: export.metadata(meta, dest),
-                     'motions': lambda: export.motions(folder, meta, dest)}[kind]()
+                     'motions': lambda: export.motions(folder, meta, dest), 'debug': lambda: export.debug(folder, meta, dest)}[kind]()
         elif kind in ('obj', 'png', 'hd'):
             dest = self._pick('folder', dest)
             if not dest:
@@ -100,9 +108,18 @@ class API:
             raise ValueError('Unbekanntes Exportformat')
         return [str(p) for p in files]
 
+    def geometry(self, ident):
+        """Bones with their polygons (texture page, mode, UVs in texels) for the debug view; no motion samples."""
+        lib = self._lib()
+        lib.model(int(ident))
+        src = json.loads((lib.folder(int(ident)) / 'native_source.json').read_text(encoding='utf-8'))
+        return {'bones': [{'parent': b['parent'], 'vertices': len(b['vertices']),
+                           'faces': [{'image': f['image'], 'abr': f['abr'], 'uv': f['uv']} for f in b['faces']]}
+                          for b in src['bones']], 'images': src['images']}
+
     def hd_list(self, ident):
         lib = self._lib()
-        meta = lib.names['models'][int(ident)]
+        meta = lib.rows[int(ident)]
         found = hd.listing(self.data, lib.info['id'], meta['file'])
         stem = Path(meta['file']).stem.upper()
         return {k: dict(v, url=f"hd/{lib.info['id']}/{stem}/{k}?v={v['mtime']}") for k, v in found.items()}
@@ -112,13 +129,30 @@ class API:
         path = self._pick('png', path)
         if not path:
             return None
-        hd.import_png(self.data, lib.info['id'], lib.names['models'][int(ident)]['file'], texture, path)
+        hd.import_png(self.data, lib.info['id'], lib.rows[int(ident)]['file'], texture, path)
         return self.hd_list(ident)
 
     def hd_remove(self, ident, texture):
         lib = self._lib()
-        hd.remove(self.data, lib.info['id'], lib.names['models'][int(ident)]['file'], texture)
+        hd.remove(self.data, lib.info['id'], lib.rows[int(ident)]['file'], texture)
         return self.hd_list(ident)
+
+    def save_thumb(self, ident, data_url):
+        """A small preview of model IDENT (PNG data URL, at most 64 KB), kept in the image's cache."""
+        import base64
+        lib = self._lib()
+        lib._check(int(ident))
+        if not str(data_url).startswith('data:image/png;base64,'):
+            raise ValueError('Kein PNG')
+        data = base64.b64decode(data_url.split(',', 1)[1])
+        if len(data) > 64 * 1024 or not data.startswith(b'\x89PNG'):
+            raise ValueError('Vorschaubild zu groß')
+        folder = lib.cache / 'thumbs'
+        folder.mkdir(exist_ok=True)
+        tmp = folder / f'{int(ident)}.tmp'
+        tmp.write_bytes(data)
+        tmp.replace(folder / f'{int(ident)}.png')
+        return f'cache/{lib.key}/thumbs/{int(ident)}.png'
 
     def save_png(self, data_url, suggestion='screenshot.png', dest=None):
         import base64
@@ -130,7 +164,7 @@ class API:
         Path(dest).write_bytes(base64.b64decode(data_url.split(',', 1)[1]))
         return str(dest)
 
-    METHODS = ('app_info', 'open', 'summary', 'catalog', 'model', 'export', 'hd_list', 'hd_import', 'hd_remove', 'save_png')
+    METHODS = ('app_info', 'open', 'summary', 'catalog', 'model', 'export', 'geometry', 'hd_list', 'hd_import', 'hd_remove', 'save_png', 'save_thumb')
 
 
 def make_server(api, host='127.0.0.1', port=0):

@@ -16,6 +16,11 @@ Du brauchst **nichts zu installieren** – kein Python, kein Qt, keinen Compiler
 - **Animationen:** rechts im Reiter „Animationen“ auswählen. Leertaste = Abspielen/Pause, ← → = Einzelbild.
 - **HD-Texturen:** Reiter „Texturen“ → „HD-PNG …“ je Texturseite; oben „HD“ einschalten.
 - **Export:** Reiter „Export“, Format wählen, Ziel wählen.
+- **Ansichten:** Vorne / Seite / Hinten / Oben neben „Zentrieren“.
+- **Liste:** Filter oben (Digimon, Partner, Gegner, Effekte, Nicht unterstützt). Vorschaubilder entstehen beim
+  ersten Öffnen eines Modells.
+- **Gesicht:** Schalter „Gesicht“ in der Leiste; blinzelt nur, solange eine Animation läuft.
+- **Debug:** Reiter „Debug“: Körperteile einzeln ein-/ausblenden, Teil anklicken für Werte und UV-Ansicht.
 - **F11:** Vollbild.
 
 ## Wenn die 3D-Ansicht schwarz bleibt
@@ -26,3 +31,8 @@ dann zeichnet der Prozessor statt der Grafikkarte (langsamer).
 ## Wo speichert der Viewer etwas?
 `%LOCALAPPDATA%\DW3-DW2003-Viewer`: Zwischenspeicher der gelesenen Modelle und deine HD-Texturen.
 Löschen ist gefahrlos (die HD-Texturen gehen dabei verloren).
+
+## Meldungen
+- „Datei nicht gefunden … .bin“: Die `.cue` verweist auf eine `.bin`, die nicht daneben liegt.
+- „Kein lesbares CD-Abbild“: falsche oder beschädigte Datei.
+- „Nicht unterstützt“ in der Liste: Diese Datei enthält kein Modell, das der Viewer lesen kann (z. B. `M500WAVE.BIN`).

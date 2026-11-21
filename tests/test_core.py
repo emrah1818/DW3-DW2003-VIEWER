@@ -76,14 +76,19 @@ def test_file_table_rejects_table_outside_image():
 
 
 def test_motion_labels_only_from_code():
-    scripts = [{'index': 0, 'motions': [1]}, {'index': 2, 'motions': [5, 12]}, {'index': 3, 'motions': [5, 11]},
-               {'index': 7, 'motions': [27]}]
+    scripts = [{'index': 0, 'motions': [1]}, {'index': 1, 'motions': [4]}, {'index': 2, 'motions': [5, 12]},
+               {'index': 3, 'motions': [5, 11]}, {'index': 4, 'motions': [3]}, {'index': 7, 'motions': [27]},
+               {'index': 16, 'motions': [45]}]
     assert motions.label(1, scripts)['de'].startswith('Idle')
     assert motions.label(2, scripts)['en'].startswith('Idle, weak')
+    assert motions.label(13, scripts)['de'] == 'Sieg'
     assert motions.label(12, scripts)['de'] == 'Treffer'
     assert motions.label(11, scripts)['en'] == 'Knockout'
-    assert motions.label(5, scripts)['scripts'] == [2, 3]
-    assert motions.label(27, scripts)['de'] == 'Aktion (Skript 7)'
+    assert motions.label(4, scripts)['de'] == 'Treffer (Zwischentreffer)'
+    assert motions.label(3, scripts)['de'] == 'Ausweichen (verfehlt)'
+    assert motions.label(5, scripts)['scripts'] == [2, 3] and motions.label(5, scripts)['de'] == 'Treffer / K. o.'
+    assert motions.label(27, scripts)['de'] == 'Technik-Skript 7'
+    assert motions.label(45, scripts)['de'] == 'Skript 16'
     assert motions.label(40, scripts)['de'] == 'Motion 40'
 
 
@@ -168,3 +173,54 @@ def test_server_token_methods_and_paths(tmp_path):
             urllib.request.urlopen(req)
     finally:
         srv.shutdown()
+
+
+def test_open_rejects_damaged_or_foreign_images(tmp_path):
+    api = API(data_dir=tmp_path / 'd')
+    junk = tmp_path / 'junk.bin'
+    junk.write_bytes(bytes(range(256)) * 9408)            # 2352-byte sectors, but no ISO9660
+    with pytest.raises(ValueError, match='CD-Abbild'):
+        api.open(str(junk))
+    cue = tmp_path / 'x.cue'
+    cue.write_text('FILE "missing.bin" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n')
+    with pytest.raises(ValueError, match='nicht gefunden'):
+        api.open(str(cue))
+    odd = tmp_path / 'odd.iso'
+    odd.write_bytes(b'x' * 1000)
+    with pytest.raises(ValueError):
+        api.open(str(odd))
+    assert api.lib is None
+
+
+def test_effect_table_matches_decomp_shape():
+    from dw3viewer.effects import EFFECT_MODELS_US
+    assert len(EFFECT_MODELS_US) == 130
+    # the game's table has one exact duplicate (id 310), kept as in dw3_decomp; the catalog lists it once
+    assert len(set(EFFECT_MODELS_US)) == 129
+    assert [e for e in EFFECT_MODELS_US if EFFECT_MODELS_US.count(e) > 1] == [(310, 0x834000A, 0x8340000)] * 2
+    for _id, file, motion in EFFECT_MODELS_US:
+        assert file >> 16 > 0 and motion >> 16 > 0          # (file number << 16) | archive entry
+
+
+def test_face_map_texel_units_and_pages():
+    from dw3viewer.library import face_map
+    # 4-bit page at tpage x=10 (640 halfwords): one VRAM halfword = 4 texels; 8-bit page: 2 texels
+    src = {'tex_origin': [640, 0], 'pages': [(10, 0), (10 | 1 << 7, 0), (11, 0)]}
+    rect = {'x': 2, 'y': 5, 'w': 3, 'h': 4, 'frames': [[2, 5], [6, 5], [10, 5]]}
+    m = face_map([rect, {'x': 0, 'y': 0, 'w': 0, 'h': 0, 'frames': []}], src)
+    assert len(m['parts']) == 1 and m['parts'][0]['kind'] == 'eyes'
+    t4, t8 = m['parts'][0]['targets']
+    assert t4 == {'image': 0, 'dst': [8, 5, 12, 4], 'src': [[8, 5], [24, 5], [40, 5]]}
+    assert t8 == {'image': 1, 'dst': [4, 5, 6, 4], 'src': [[4, 5], [12, 5], [20, 5]]}
+    # a source in another tpage is reported, not mapped
+    far = dict(rect, frames=[[2, 5], [70, 5], [10, 5]])
+    p = face_map([far], src)['parts'][0]
+    assert p['targets'] == [] and p['note']
+
+
+def test_motion_labels_scripts_and_neutral():
+    from dw3viewer.motions import label
+    assert label(13, [])['en'] == 'Victory'
+    l = label(20, [{'index': 3, 'motions': [20]}, {'index': 99, 'motions': [20]}])
+    assert l['scripts'] == [3, 99] and 'Script 99' in l['en'] and l['source']
+    assert label(40, [{'index': 3, 'motions': [20]}])['en'] == 'Motion 40'

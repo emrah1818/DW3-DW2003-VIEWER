@@ -108,3 +108,21 @@ def motions(folder, meta, dest_file):
     dest_file.parent.mkdir(parents=True, exist_ok=True)
     dest_file.write_text(json.dumps(out), encoding='utf-8')
     return [dest_file]
+
+
+def debug(folder, meta, dest_file):
+    """Technical model data for inspection: every bone (parent, children, its mesh's vertices in model units,
+    its polygons with texture page, semi-transparency mode and UVs in texels of the page), the texture pages and
+    the motions' summary. Everything as the converter read it from the game file."""
+    src = json.loads((Path(folder) / 'native_source.json').read_text(encoding='utf-8'))
+    out = {'format': 'dw3viewer-model-debug-1', 'model': meta['file'], 'name': meta['name'], 'kind': meta.get('kind'),
+           'counts': meta['counts'], 'textures': meta['textures'], 'tex_origin': src.get('tex_origin'),
+           'face': meta.get('face'), 'motions': [{k: m[k] for k in ('id', 'name', 'frames', 'end', 'scripts')} for m in meta['motions']],
+           'bones': []}
+    for info, b in zip(meta['bones'], src['bones']):
+        out['bones'].append(dict(info, vertex_positions=b['vertices'],
+                                 polygons=[{'image': f['image'], 'abr': f['abr'], 'indices': f['indices'], 'uv': f['uv']} for f in b['faces']]))
+    dest_file = Path(dest_file)
+    dest_file.parent.mkdir(parents=True, exist_ok=True)
+    dest_file.write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
+    return [dest_file]

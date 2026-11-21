@@ -9,7 +9,7 @@ const T = {
     f_all: 'Alle Modelle', f_partner: 'Partner', f_enemy: 'Gegner', f_other: 'Ohne Kämpfer',
     hint: 'Öffne dein eigenes Abbild von Digimon World 3 (USA) oder Digimon World 2003 (PAL). Es werden keine Spieldaten mitgeliefert.',
     loading: 'Modell wird gelesen …', m_orig: 'Original', m_hd: 'HD', nearest: 'PS1-Pixel (nearest)', wire: 'Drahtgitter',
-    grid: 'Gitter', cull: 'Rückseiten ausblenden', skel: 'Skelett', bg: 'Hintergrund', center: 'Zentrieren', shot: 'Bild speichern',
+    grid: 'Gitter', cull: 'Rückseiten ausblenden', skel: 'Skelett', faceopt: 'Gesicht', bg: 'Hintergrund', center: 'Zentrieren', shot: 'Bild speichern',
     speed: 'Tempo', loop: 'Schleife', t_info: 'Info', t_anim: 'Animationen', t_tex: 'Texturen', t_exp: 'Export',
     noselect: 'Kein Modell gewählt.', compare: 'Vergleichen mit',
     hdnote: 'HD: eigene PNG je Texturseite, beliebige Größe (z. B. 2048 × 4096), ohne Farbreduzierung. Wird für dieses Modell gespeichert und beim nächsten Öffnen wieder geladen.',
@@ -20,15 +20,23 @@ const T = {
     k_verts: 'Vertices (Spiel)', k_faces: 'Polygone (Spiel)', k_tq: 'davon Dreiecke / Vierecke', k_gpu: 'Dreiecke / Vertices (Anzeige)',
     k_tex: 'Texturseiten', k_mot: 'Motions', k_data: 'Datenbereiche', k_lba: 'Sektor (LBA)', k_size: 'Größe', k_fnum: 'Dateinummer',
     k_fighters: 'Kämpfer', k_scripts: 'Aktionsskripte', k_face: 'Gesichtsbereiche', none: '—', import: 'HD-PNG …', remove: 'Entfernen',
+    chain: 'danach Idle (wie im Spiel)', chained: 'Weiter mit Idle (Ende „zurück zu Idle“)',
+    v_front: 'Vorne', v_side: 'Seite', v_top: 'Oben', v_back: 'Hinten',
     hdon: 'HD', hdoff: 'kein HD', exported: n => `${n} Datei(en) geschrieben`, saved: 'Gespeichert', end: 'Ende',
     end_loop: 'Schleife', end_hold: 'hält', end_idle: 'zurück zu Idle', partner: 'Partner', enemy: 'Gegner',
+    t_dbg: 'Debug', d_all: 'Alle zeigen', d_only: 'Nur Auswahl', d_clear: 'Auswahl aufheben', d_page: 'Texturseite', d_alluv: 'alle UVs',
+    e_dbg: 'Debug-Daten als JSON exportieren', f_digimon: 'Digimon', f_effect: 'Effektmodelle', f_unsup: 'Nicht unterstützt',
+    effect: 'Effekt', unsup: 'nicht unterstützt', b_parent: 'Eltern-Knochen', b_children: 'Kinder', b_vf: 'Vertices / Polygone',
+    b_tq: 'Dreiecke / Vierecke', b_pages: 'Texturseiten', b_abr: 'Halbtransparenz', b_hidden: 'vom Spiel ausgeblendet (dieses Bild)',
+    b_pos: 'Position (lokal)', b_rot: 'Drehung (lokal, Grad)', b_scale: 'Skalierung (lokal)', b_world: 'Position (Welt)', yes: 'ja', no: 'nein',
+    b_root: 'Wurzel', b_nomesh: 'ohne Mesh', blend: ['B/2 + F/2', 'B + F', 'B − F', 'B + F/4'],
   },
   en: {
     open: 'Open image …', nodisc: 'No image open', lang: 'Language', search: 'Name, code or number …',
     f_all: 'All models', f_partner: 'Partners', f_enemy: 'Enemies', f_other: 'No fighter',
     hint: 'Open your own disc image of Digimon World 3 (USA) or Digimon World 2003 (PAL). No game data is included.',
     loading: 'Reading model …', m_orig: 'Original', m_hd: 'HD', nearest: 'PS1 pixels (nearest)', wire: 'Wireframe',
-    grid: 'Grid', cull: 'Hide back faces', skel: 'Skeleton', bg: 'Background', center: 'Center', shot: 'Save image',
+    grid: 'Grid', cull: 'Hide back faces', skel: 'Skeleton', faceopt: 'Face', bg: 'Background', center: 'Center', shot: 'Save image',
     speed: 'Speed', loop: 'Loop', t_info: 'Info', t_anim: 'Animations', t_tex: 'Textures', t_exp: 'Export',
     noselect: 'No model selected.', compare: 'Compare with',
     hdnote: 'HD: your own PNG per texture page, any size (e.g. 2048 × 4096), no colour reduction. Saved for this model and loaded again next time.',
@@ -39,8 +47,16 @@ const T = {
     k_verts: 'Vertices (game)', k_faces: 'Polygons (game)', k_tq: 'triangles / quads', k_gpu: 'Triangles / vertices (shown)',
     k_tex: 'Texture pages', k_mot: 'Motions', k_data: 'Data areas', k_lba: 'Sector (LBA)', k_size: 'Size', k_fnum: 'File number',
     k_fighters: 'Fighters', k_scripts: 'Action scripts', k_face: 'Face areas', none: '—', import: 'HD PNG …', remove: 'Remove',
+    chain: 'then idle (as in the game)', chained: 'Continuing with idle (end "back to idle")',
+    v_front: 'Front', v_side: 'Side', v_top: 'Top', v_back: 'Back',
     hdon: 'HD', hdoff: 'no HD', exported: n => `${n} file(s) written`, saved: 'Saved', end: 'End',
     end_loop: 'loop', end_hold: 'holds', end_idle: 'back to idle', partner: 'Partner', enemy: 'Enemy',
+    t_dbg: 'Debug', d_all: 'Show all', d_only: 'Only selection', d_clear: 'Clear selection', d_page: 'Texture page', d_alluv: 'all UVs',
+    e_dbg: 'Export debug data as JSON', f_digimon: 'Digimon', f_effect: 'Effect models', f_unsup: 'Not supported',
+    effect: 'Effect', unsup: 'not supported', b_parent: 'Parent bone', b_children: 'Children', b_vf: 'Vertices / polygons',
+    b_tq: 'Triangles / quads', b_pages: 'Texture pages', b_abr: 'Semi-transparency', b_hidden: 'hidden by the game (this frame)',
+    b_pos: 'Position (local)', b_rot: 'Rotation (local, degrees)', b_scale: 'Scale (local)', b_world: 'Position (world)', yes: 'yes', no: 'no',
+    b_root: 'root', b_nomesh: 'no mesh', blend: ['B/2 + F/2', 'B + F', 'B − F', 'B + F/4'],
   },
 };
 let lang = (() => { try { return localStorage.getItem('lang'); } catch { return null; } })()
@@ -78,17 +94,19 @@ const norm = s => String(s ?? '').normalize('NFKC').toLowerCase().replace(/[^a-z
 function matches(m, q) {
   if (!q) return true;
   const n = q.replace(/^#/, '');
-  if (/^\d+$/.test(n)) return [m.id, ...(m.fighter_ids || [])].includes(Number(n));
+  if (/^\d+$/.test(n)) return [m.id, m.effect_id, ...(m.fighter_ids || [])].includes(Number(n));
   const nq = norm(q);
   return [m.name, m.code, m.file, ...(m.aliases || [])].some(h => norm(h).includes(nq));
 }
 function renderList() {
   const q = $('#q').value.trim(), f = $('#filter').value;
-  S.shown = S.catalog.filter(m => matches(m, q) && (f === 'all' || (f === 'partner' && m.fighter_ids.length && !m.enemy)
-    || (f === 'enemy' && m.enemy) || (f === 'other' && !m.fighter_ids.length)));
+  const dig = m => m.kind !== 'effect';
+  S.shown = S.catalog.filter(m => matches(m, q) && (f === 'all' || (f === 'digimon' && dig(m))
+    || (f === 'partner' && dig(m) && m.fighter_ids.length && !m.enemy) || (f === 'enemy' && dig(m) && m.enemy)
+    || (f === 'other' && dig(m) && !m.fighter_ids.length) || (f === 'effect' && !dig(m)) || (f === 'unsupported' && m.unsupported)));
   $('#count').textContent = S.catalog.length ? (S.shown.length === S.catalog.length ? t('models', S.catalog.length) : t('of', S.shown.length, S.catalog.length)) : '';
-  $('#list').innerHTML = S.shown.map(m => `<div class="item${m.id === S.sel ? ' sel' : ''}" data-id="${m.id}">
-    <span class="n">${esc(m.name)}</span><span class="tag">${m.enemy ? t('enemy') : m.fighter_ids.length ? t('partner') : '·'}</span>
+  $('#list').innerHTML = S.shown.map(m => `<div class="item${m.id === S.sel ? ' sel' : ''}${m.unsupported ? ' unsup' : ''}" data-id="${m.id}" title="${esc(m.unsupported || '')}">
+    ${m.thumb ? `<img class="th" src="${m.thumb}" alt="">` : '<span class="th"></span>'}<span class="n">${esc(m.name)}</span><span class="tag${m.kind === 'effect' ? ' eff' : ''}">${m.unsupported ? t('unsup') : m.kind === 'effect' ? t('effect') : m.enemy ? t('enemy') : m.fighter_ids.length ? t('partner') : '·'}</span>
     <span class="c">${esc(m.code)}</span></div>`).join('');
 }
 $('#list').addEventListener('click', e => { const it = e.target.closest('.item'); if (it) select(Number(it.dataset.id)); });
@@ -132,7 +150,7 @@ async function select(id) {
     const r = await api('model', id);
     if (seq !== S.loadSeq) return;
     S.meta = r.meta; S.base = r.base; S.hd = r.hd;
-    await view.load(S.base + 'model.glb');
+    await view.load(S.base + 'model.glb', S.meta);
     if (seq !== S.loadSeq) return;
     $('#msg').classList.add('hidden');
     await applyHd();
@@ -140,7 +158,19 @@ async function select(id) {
     const first = S.meta.motions.find(m => m.gltf);
     renderInfo(); renderTex();
     playMotion(first ? first.id : null);
-  } catch (e) { if (seq === S.loadSeq) toast(e.message, true); }
+    const row = S.catalog.find(x => x.id === id);
+    if (row && !row.thumb) setTimeout(async () => {
+      if (S.sel !== id) return;
+      try { row.thumb = await api('save_thumb', id, view.thumbnail(96)); const el = document.querySelector(`#list .item[data-id="${id}"] .th`); if (el) el.outerHTML = `<img class="th" src="${row.thumb}" alt="">`; } catch {}
+    }, 400);
+    S.geo = null; S.bone = -1; renderDebug();
+  } catch (e) {
+    if (seq === S.loadSeq) {
+      toast(e.message, true);
+      const row = S.catalog.find(m => m.id === id);
+      if (row && /Nicht unterstützt/.test(e.message)) { row.unsupported = e.message; renderList(); }
+    }
+  }
   finally { if (seq === S.loadSeq) $('#busy').classList.add('hidden'); }
 }
 
@@ -179,11 +209,13 @@ function renderAnims() {
 $('#anims').addEventListener('click', e => { const a = e.target.closest('.anim'); if (a) playMotion(Number(a.dataset.id)); });
 
 function motionById(id) { return S.meta?.motions.find(m => m.id === id); }
-function playMotion(id) {
+function playMotion(id, keepLoop = false) {
   S.motion = id;
   renderAnims();
   const m = motionById(id);
   const other = S.cmp != null ? motionById(S.cmp) : null;
+  // loop as the game ends the motion: a loop repeats, "hold" and "back to idle" play once
+  if (!keepLoop && m) { $('#t-loop').checked = m.end === 'loop'; view.setLoop($('#t-loop').checked); }
   view.play(m?.gltf ?? null, other?.gltf ?? null, m?.hidden, other?.hidden);
   updateTimeline(true);
   $('#t-play').textContent = '⏸';
@@ -209,6 +241,13 @@ function updateTimeline(full) {
   $('#t-dur').textContent = `${view.time().toFixed(2)} / ${view.duration().toFixed(2)} s`;
 }
 view.onTick = () => { if (S.meta) updateTimeline(false); };
+// as in the game: a motion that ends "back to idle" goes on with the idle motion (its last samples already hold the
+// game's blend toward it)
+view.onFinished = () => {
+  const m = motionById(S.motion);
+  if ($('#t-chain').checked && m && m.end === 'idle' && S.cmp == null && motionById(1)?.gltf) { playMotion(1); toast(t('chained')); }
+  else $('#t-play').textContent = '▶';
+};
 $('#t-play').onclick = () => {
   if (!S.meta) return;
   if (view.playing) { view.pause(true); $('#t-play').textContent = '▶'; }
@@ -239,8 +278,13 @@ $('#o-wire').onchange = () => view.setOption('wireframe', $('#o-wire').checked);
 $('#o-cull').onchange = () => view.setOption('cull', $('#o-cull').checked);
 $('#o-grid').onchange = () => view.setGrid($('#o-grid').checked);
 $('#o-skel').onchange = () => view.setSkeleton($('#o-skel').checked);
+$('#o-face').onchange = () => {
+  view.faceOn = $('#o-face').checked;
+  if (!view.faceOn) for (const i of [view.a, view.b]) if (i?.face) { i.face.reset('orig'); i.face.reset('hd'); for (const m of i.materials) if (m.map) m.map.needsUpdate = true; }
+};
 $('#o-bg').oninput = () => { view.setBackground($('#o-bg').value); try { localStorage.setItem('bg', $('#o-bg').value); } catch {} };
 $('#b-center').onclick = () => view.frame();
+document.querySelectorAll('[data-look]').forEach(b => b.onclick = () => view.look(b.dataset.look));
 $('#b-shot').onclick = async () => {
   try { const p = await api('save_png', view.snapshot(), `${S.meta?.code || 'dw3'}_${S.motion ?? 0}_${view.frameIndex()}.png`); if (p) toast(t('saved') + ': ' + p); }
   catch (e) { toast(e.message, true); }
@@ -279,11 +323,98 @@ document.querySelectorAll('[data-exp]').forEach(b => b.onclick = async () => {
   } catch (e) { toast(e.message, true); }
 });
 
+// ------------------------------------------------------------------ debug view
+S.bone = -1; S.geo = null;
+async function renderDebug() {
+  const m = S.meta;
+  if (!m || $('#tab-dbg').classList.contains('hidden')) return;
+  if (!S.geo) { try { S.geo = await api('geometry', m.id); } catch (e) { return toast(e.message, true); } }
+  const inst = view.a;
+  const depth = b => { let d = 0, p = m.bones[b].parent; while (p > 0 && d < 64) { d++; p = m.bones[p].parent; } return d; };
+  const order = [];
+  const walk = b => { order.push(b); for (const c of m.bones[b].children) walk(c); };
+  for (const b of m.bones) if (b.index > 0 && b.parent <= 0) walk(b.index);
+  for (const b of m.bones) if (b.index > 0 && !order.includes(b.index)) order.push(b.index);
+  $('#dbg-bones').innerHTML = order.map(b => {
+    const x = m.bones[b];
+    return `<div class="bone${b === S.bone ? ' sel' : ''}${inst?.userHidden.has(b) ? ' off' : ''}" data-b="${b}" style="padding-left:${6 + depth(b) * 12}px">
+      <input type="checkbox" data-vis="${b}" ${inst?.userHidden.has(b) ? '' : 'checked'}> #${b}
+      <span class="m">${x.vertices} V · ${x.faces} P${x.abr.length ? ' · abr' : ''}</span></div>`;
+  }).join('');
+  const pages = m.textures.map((tx, k) => `<option value="${k}">${esc(tx.file)}</option>`).join('');
+  if ($('#dbg-page').dataset.model !== String(m.id)) { $('#dbg-page').innerHTML = pages; $('#dbg-page').dataset.model = String(m.id); }
+  renderBoneInfo(); drawUv();
+}
+function fmt(v) { return v.map(x => (Math.abs(x) < 1e-4 ? 0 : x).toFixed(2)).join(', '); }
+function renderBoneInfo() {
+  const m = S.meta, b = S.bone;
+  if (!m || b < 0) { $('#dbg-info').innerHTML = ''; return; }
+  const x = m.bones[b], bone = view.a?.bone(b);
+  const rows = [[t('b_parent'), x.parent <= 0 ? t('b_root') : '#' + x.parent], [t('b_children'), x.children.map(c => '#' + c).join(', ') || t('none')],
+    [t('b_vf'), `${x.vertices} / ${x.faces}`], [t('b_tq'), `${x.faces - x.quads} / ${x.quads}`],
+    [t('b_pages'), x.images.map(k => m.textures[k]?.file).join(', ') || t('b_nomesh')],
+    [t('b_abr'), x.abr.map(a => `${a - 1}: ${t('blend')[a - 1]}`).join(', ') || t('none')],
+    [t('b_hidden'), view.a?.animHidden(b) ? t('yes') : t('no')]];
+  if (bone) {
+    const e = new (bone.rotation.constructor)().copy(bone.rotation);
+    const w = bone.getWorldPosition(bone.position.clone());
+    rows.push([t('b_pos'), fmt(bone.position.toArray())], [t('b_rot'), fmt([e.x, e.y, e.z].map(r => r * 180 / Math.PI))],
+      [t('b_scale'), fmt(bone.scale.toArray())], [t('b_world'), fmt(w.toArray())]);
+  }
+  $('#dbg-info').innerHTML = `<h3>#${b}</h3>` + kv(rows);
+}
+function drawUv() {
+  const cv = $('#dbg-uv'), ctx = cv.getContext('2d'), m = S.meta;
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  if (!m || !S.geo) return;
+  const k = Number($('#dbg-page').value || 0), tex = m.textures[k];
+  if (!tex) return;
+  const img = new Image();
+  img.onload = () => {
+    const sx = cv.width / tex.width, sy = cv.height / tex.height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, cv.width, cv.height);
+    const draw = (b, color, width) => {
+      ctx.strokeStyle = color; ctx.lineWidth = width;
+      for (const f of S.geo.bones[b].faces) {
+        if (f.image !== k) continue;
+        const pts = f.uv;   // the converter writes a quad's corners around its edge
+        ctx.beginPath(); pts.forEach(([u, v], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, (u + 0.5) * sx, (v + 0.5) * sy)); ctx.closePath(); ctx.stroke();
+      }
+    };
+    if ($('#dbg-alluv').checked) S.geo.bones.forEach((_, b) => draw(b, 'rgba(120,200,255,0.55)', 1));
+    if (S.bone > 0) draw(S.bone, '#ff6a2a', 2);
+  };
+  img.src = S.base + tex.file;
+}
+$('#dbg-bones').addEventListener('click', e => {
+  const inst = view.a; if (!inst) return;
+  const vis = e.target.closest('[data-vis]');
+  if (vis) { const b = Number(vis.dataset.vis); vis.checked ? inst.userHidden.delete(b) : inst.userHidden.add(b); if (view.b) view.b.userHidden = new Set(inst.userHidden); renderDebug(); return; }
+  const row = e.target.closest('.bone'); if (!row) return;
+  S.bone = Number(row.dataset.b);
+  for (const i of [view.a, view.b]) if (i) i.sel.value = S.bone;
+  const x = S.meta.bones[S.bone];
+  if (x.images.length) $('#dbg-page').value = String(x.images[0]);
+  renderDebug();
+});
+$('#dbg-all').onclick = () => { for (const i of [view.a, view.b]) i?.userHidden.clear(); renderDebug(); };
+$('#dbg-only').onclick = () => {
+  if (S.bone < 0) return;
+  for (const i of [view.a, view.b]) if (i) i.userHidden = new Set(S.meta.bones.map(b => b.index).filter(b => b !== S.bone && b > 0));
+  renderDebug();
+};
+$('#dbg-none').onclick = () => { S.bone = -1; for (const i of [view.a, view.b]) if (i) i.sel.value = -1; renderDebug(); };
+$('#dbg-page').onchange = drawUv;
+$('#dbg-alluv').onchange = drawUv;
+setInterval(() => { if (S.bone >= 0 && !$('#tab-dbg').classList.contains('hidden')) renderBoneInfo(); }, 250);
+
 // ------------------------------------------------------------------ tabs, start
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
   document.querySelectorAll('.tab').forEach(x => x.classList.toggle('hidden', x.id !== 'tab-' + b.dataset.tab));
   if (b.dataset.tab === 'anim') renderAnims();
+  if (b.dataset.tab === 'dbg') renderDebug();
 });
 $('#lang').onchange = () => { lang = $('#lang').value; try { localStorage.setItem('lang', lang); } catch {} applyLang(); };
 try { const bg = localStorage.getItem('bg'); if (bg) { $('#o-bg').value = bg; view.setBackground(bg); } } catch {}

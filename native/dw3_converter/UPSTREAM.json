@@ -6,6 +6,10 @@
   "adaptations": [
     "Headless CLI and PNG writer",
     "stage_export.cpp contains matrix helpers and StageEdit::fromModel from stage.cpp",
-    "Local SDL3/SDL.h declares only the export adapter; no SDL runtime"
+    "Local SDL3/SDL.h declares only the export adapter; no SDL runtime",
+    "DW3/DW2003 Viewer: cli.cpp takes optional ENTRY MOTIONS (effect models)",
+    "DW3/DW2003 Viewer: gltf.cpp exports one-frame motions (poses) as two equal samples",
+    "DW3/DW2003 Viewer: gltf.cpp writes accessor min/max with 9 significant digits (exact float32)",
+    "DW3/DW2003 Viewer: gltf.cpp normalizes quaternions and writes alphaCutoff only for MASK materials"
   ]
 }

@@ -1,4 +1,4 @@
-# DW3 / DW2003 Viewer 0.1.0
+# DW3 / DW2003 Viewer 0.2.0
 
 Betrachter für die Kampfmodelle von **Digimon World 3** (USA) und **Digimon World 2003** (PAL): echte Modelle,
 Originaltexturen und Originalanimationen, gelesen aus deinem eigenen Abbild. **Es sind keine Spieldaten
@@ -8,20 +8,24 @@ enthalten**, und das Abbild wird nie verändert.
 image. No game data included; the image is never changed.*
 
 ## Funktionen
-- Abbild öffnen (`.cue`/`.bin`, `.iso`), Version erkennen (SLUS_014.36 / SLES_039.36 / SLPS_034.46).
-- Liste aller Kampfmodelle mit den Namen aus dem Spiel, Suche (Name, Kürzel, Nummer), Filter Partner/Gegner.
-  Pfeiltasten öffnen direkt das nächste Modell.
-- 3D-Ansicht: drehen (linke Maustaste), verschieben (rechte), zoomen (Rad), zentrieren; PS1-Pixel (nearest)
-  oder geglättet; Drahtgitter, Gitter, Rückseiten, Skelett, Hintergrundfarbe, Bild speichern.
-- Animationen: alle Motions des Modells, benannt nur dort, wo der Spielcode die Bedeutung zeigt (Idle,
-  Treffer, K. o., Skriptnummer), sonst „Motion N“. Abspielen, Pause, Einzelbild vor/zurück (← →, Leertaste),
-  Tempo, Schleife, Bildnummer, Dauer, Vergleich zweier Motions nebeneinander.
-- Infos: Modell-ID, Datei, Knochen, Vertices und Polygone (Spiel und Anzeige), Texturseiten (Größe, Farbtiefe,
-  tpage/CLUT), Sektor, Größe, Dateinummer, Kämpfer, Aktionsskripte.
-- HD-Modus: eigene PNG je Texturseite in beliebiger Größe (z. B. 2048 × 4096), ohne Farbreduzierung, je Modell
-  gespeichert und automatisch wieder geladen.
-- Export: glTF/GLB (Skelett + alle Animationen), OBJ + MTL + PNG (Ruhepose), Texturen als PNG, Animationen als
-  JSON (30 Bilder/s), technische Daten als JSON.
+- Abbild öffnen (`.cue`/`.bin`, `.iso`), Version erkennen (SLUS_014.36 / SLES_039.36 / SLPS_034.46). Verständliche
+  Meldung bei fehlender `.bin`, fremdem oder beschädigtem Abbild.
+- **Liste aller 470 Modelldateien** (USA): 249 Digimon-Kampfmodelle mit Spielnamen und 221 Effektmodelle
+  (129 aus der Effekttabelle des Spiels, die übrigen `MEFT*.BIN`). Filter: Alle, Digimon, Partner, Gegner,
+  Sonstige, Effekte, Nicht unterstützt. Nicht lesbare Dateien sind markiert. Vorschaubilder, Suche, Pfeiltasten.
+- 3D-Ansicht: drehen, verschieben, zoomen, zentrieren, Ansichten Vorne/Seite/Hinten/Oben; PS1-Pixel oder
+  geglättet; Drahtgitter, Gitter, Rückseiten, Skelett, Hintergrundfarbe, Bild speichern.
+- **Gesichtsanimation wie im Spiel** (`face.c`): Augen offen/halb/zu mit dem Zufalls-Blinzeln des Spiels,
+  geschlossene Augen in den Motions 4–11, halb in Motion 2; weitere Gesichtsteile im 18-Bilder-Takt. Die
+  Rechtecke werden byte-genau auf den Texturseiten kopiert, in der Reihenfolge des Spiels; auch mit HD-Texturen.
+- **PS1-Halbtransparenz** (`abr` 0–3): ½B+½F, B+F, B−F, B+¼F, nur für Texel mit gesetztem STP-Bit.
+- Animationen: alle Motions, benannt nur, wo Spielcode oder -daten die Bedeutung belegen; Abspielen, Pause,
+  Einzelbild, Tempo, Schleife wie im Spiel, Übergang zurück in Idle, Vergleich zweier Motions. Vom Spiel
+  ausgeblendete Teile (Skalierung ≤ 48) werden Bild für Bild ausgeblendet.
+- **Debug-Ansicht**: Knochenbaum, jeden Körperteil einzeln ein-/ausblenden, „Nur Auswahl“, Hervorhebung,
+  Position/Rotation/Skalierung live, Vertex-/Polygonzahl, Texturseite und Mischmodus je Teil, UV-Überlagerung
+  auf der Texturseite, Debug-Export (JSON).
+- Infos, HD-Texturen (beliebige Größe), Export GLB/OBJ+MTL+PNG/PNG/Motions-JSON/Metadaten/Debug-JSON.
 - Deutsch / Englisch (folgt der Systemsprache, umschaltbar).
 
 ## Start
@@ -36,17 +40,21 @@ python run.py
 Ohne Grafikkarte/Treiber: `DW3_SOFTWARE_GL=1` setzen.
 
 ## Stand und Grenzen
-Geprüft mit **Digimon World 3 (USA)**: 248 von 249 Modelldateien, Oberfläche mit automatischem Test.
-**Digimon World 2003 (PAL) ist noch nicht geprüft** (kein Abbild vorhanden). Offen sind u. a. Gesichtsanimation,
-PS1-Mischmodi, Effektmodelle. Details: [DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md), Formate und Quellen:
-[RESEARCH.md](RESEARCH.md), Aufbau: [ARCHITECTURE.md](ARCHITECTURE.md).
+Fertig für **Digimon World 3 (USA)**: 468 von 470 Modelldateien werden gelesen, alle 468 Exporte sind laut
+Khronos glTF-Validator fehlerfrei. **Digimon World 2003 (PAL) ist ausdrücklich zurückgestellt.** Die
+Test-Übersicht (implementiert / getestet / mit echten Daten / Windows) steht in
+[DEVELOPMENT_LOG.md](DEVELOPMENT_LOG.md), Formate und Quellen in [RESEARCH.md](RESEARCH.md), Aufbau in
+[ARCHITECTURE.md](ARCHITECTURE.md), Änderungen in [CHANGELOG.md](CHANGELOG.md).
 
 ## Tests
 ```
-python -m pytest -q                                   # ohne Spieldaten
-DW3_TEST_DISC="…/Digimon World 3 (USA).cue" python -m pytest -q        # mit eigenem Abbild
-python tests/integration/ui_real.py "…/Digimon World 3 (USA).cue" out/  # Oberfläche (Chrome + Playwright)
+python -m pytest -q                                                       # ohne Spieldaten
+DW3_TEST_DISC="…/Digimon World 3 (USA).cue" python -m pytest -q             # mit eigenem Abbild
+python tests/integration/ui_real.py   "…/Digimon World 3 (USA).cue" out/    # Oberfläche (Chrome + Playwright)
+python tests/integration/face_real.py "…/Digimon World 3 (USA).cue" out/    # Gesichtsanimation
+python tools/qa_all.py "…/Digimon World 3 (USA).cue" out/                   # alle Modelle + glTF-Validator
 ```
+Die Spieldaten werden nur lokal gelesen und nie ins Repository übernommen.
 
 ## Herkunft und Lizenzen
 - Modell-, Textur- und Animationsleser: `native/dw3_converter`, aus

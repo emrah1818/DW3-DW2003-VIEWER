@@ -70,18 +70,34 @@ Quelle: dw3_decomp `model_mesh.c` (`FIGHTSTG_setMotion`, `FIGHTSTG_stepMotion`, 
 
 ### 2.6 Bedeutung der Motions – nur was der Code zeigt
 - Motion 1 = Idle, Motion 2 = Idle bei ≤ ¼ KP (`techs.c WFIGHTMN_setIdleMotion`, `idleMotion + 1`).
-- Skript 2 = Treffer, Skript 3 = K. o. (`effect.h`: `HitEffect.result` 1 Treffer, 2 K. o., Skript = result + 1).
-- Weitere Skripte werden von Techniken (`TechData.script`) und Items gestartet; sie erscheinen mit ihrer Nummer.
-- Alle anderen Motions behalten neutrale Namen („Motion N“). Sieg, Verteidigung, Spezialattacke usw. werden
-  erst benannt, wenn eine Codestelle sie belegt.
+- Motion 13 = Sieg (`menu.c`).
+- Skript 1 = Treffer (nicht der letzte), 2 = Treffer, 3 = K. o., 4 = Ausweichen/Verfehlt
+  (`effect.h`: `HitEffect.result`, Skript = result + 1).
+- Skripte 5, 6, 8 = Technikvarianten (`choosePartnerScript`); 12 ruft ein Modell; 10, 14, 15, 17 = Items
+  (`item.c`). Diese erscheinen mit Skriptnummer.
+- Alle anderen Motions bleiben „Motion N“. Verteidigung, Spezialattacke usw. sind nicht eindeutig belegt.
 
-### 2.7 Noch unbekannt oder nicht umgesetzt
-- Unterschiede USA ↔ PAL in den Modelldateien selbst: nicht geprüft (kein PAL-Abbild).
-- Gesichtsanimation (Augen blinzeln, Gesichtsteile wechseln: `face.c`, VRAM-Rechtecke): Daten werden gelesen
-  und angezeigt (Anzahl der Gesichtsbereiche), aber im Viewer noch nicht abgespielt.
-- Effektmodelle (FIGHT/EFFECT, Techniken, DNA-Formen): noch nicht in der Liste.
-- Kampfbühnen-Licht (drei Lichter + Umgebungsfarbe): nicht nachgebildet; die Ansicht ist unbeleuchtet wie die
-  Texturen selbst.
+### 2.7 Gesichtsanimation (`face.c`) – umgesetzt
+- Teil 0/1 = Augen: Motion 4–11 → zu (Bild 2), Motion 2 → halb (1), sonst offen mit Blinzeln:
+  Timer = rand(0..127) + 60 Bilder (60 Hz); Zustand nach Timer >> 1: 1, 2, 5, 6 halb; 3, 4 zu.
+- Übrige Teile: Bild = (Zeit % 18) / 6.
+- Rechtecke in VRAM-Halbworten relativ zum Texturursprung; Texel = x·4 (4 Bit) bzw. x·2 (8 Bit). Alle 257
+  benutzten Teile haben Quelle und Ziel in derselben tpage. Kopiert wird nacheinander in Spielreihenfolge
+  (14 Überlappungen bei BK Imperialdramon).
+
+### 2.8 Halbtransparenz – umgesetzt
+- Materialname `texN_abrM`, M = abr + 1. Nur Texel mit STP-Bit mischen (Konverter: Alpha 128).
+- 0: B/2 + F/2, 1: B + F, 2: B − F, 3: B + F/4. Zwei Durchgänge: deckend (Alpha ≥ 0,75), halbtransparent.
+
+### 2.9 Effektmodelle – umgesetzt
+- Tabelle `FIGHTSTG_effectModels` (USA, 130 Einträge `{id, (Datei << 16) | Eintrag, Motionsdatei}`; Eintrag `{310, …}` steht doppelt und wird einmal gelistet) aus
+  dw3_decomp `effect_model.c`; weitere `MEFT*.BIN` ohne Tabelleneintrag werden ebenfalls gelistet.
+- Nicht lesbar: `MEFT0001.BIN`, `M500WAVE.BIN` (keine Knochenliste).
+
+### 2.10 Noch unbekannt oder nicht umgesetzt
+- PAL: zurückgestellt.
+- Welche Technik welches Effektmodell nutzt: nicht ausgewertet; Effekte bleiben neutral benannt.
+- Kampfbühnen-Licht (drei Lichter + Umgebungsfarbe): nicht nachgebildet.
 
 ## 3. Warum diese Technik (Sprache, Rendering)
 

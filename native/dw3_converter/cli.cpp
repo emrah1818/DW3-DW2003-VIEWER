@@ -189,14 +189,17 @@ int main(int argc, char **argv) {
     if (argc == 4 && std::string(argv[1]) == "--scripts") {
         try { return dump_scripts(argv[2], std::stoi(argv[3])); } catch (const std::exception &e) { std::cerr << e.what(); return 5; }
     }
-    if (argc != 3) { std::cerr << "Usage: dw3_converter MODEL.BIN OUTPUT_DIR\n"; return 2; }
+    /* DW3/DW2003 Viewer: optional ENTRY MOTIONS, the archive entries of the bone list and of the motions
+       (an effect model of FIGHTSTG_effectModels: file and motionFile & 0xFFFF) */
+    if (argc != 3 && argc != 5) { std::cerr << "Usage: dw3_converter MODEL.BIN OUTPUT_DIR [ENTRY MOTIONS]\n"; return 2; }
+    int entryArg = argc == 5 ? std::stoi(argv[3]) : -1, motionsArg = argc == 5 ? std::stoi(argv[4]) : -1;
     try {
         std::ifstream in(argv[1], std::ios::binary);
         if (!in) return 2;
         std::vector<uint8_t> bytes(std::istreambuf_iterator<char>(in), {});
         if (bytes.size() < 8 || bytes.size() > 32 * 1024 * 1024) return 2;
         Model model;
-        if (!model.load("DW3 model", std::move(bytes), nullptr, -1, -1)) {
+        if (!model.load("DW3 model", std::move(bytes), nullptr, entryArg, motionsArg)) {
             std::cerr << model.error << '\n'; return 3;
         }
         std::string error;

@@ -22,9 +22,12 @@
     <input id="q" type="search" data-tp="search" placeholder="Name, Kürzel oder Nummer …" autocomplete="off">
     <select id="filter">
       <option value="all" data-t="f_all">Alle Modelle</option>
+      <option value="digimon" data-t="f_digimon">Digimon</option>
       <option value="partner" data-t="f_partner">Partner</option>
       <option value="enemy" data-t="f_enemy">Gegner</option>
       <option value="other" data-t="f_other">Ohne Kämpfer</option>
+      <option value="effect" data-t="f_effect">Effektmodelle</option>
+      <option value="unsupported" data-t="f_unsup">Nicht unterstützt</option>
     </select>
     <div id="count" class="small dim"></div>
     <div id="list" tabindex="0"></div>
@@ -41,8 +44,10 @@
       <label><input type="checkbox" id="o-grid" checked> <span data-t="grid">Gitter</span></label>
       <label><input type="checkbox" id="o-cull"> <span data-t="cull">Rückseiten ausblenden</span></label>
       <label><input type="checkbox" id="o-skel"> <span data-t="skel">Skelett</span></label>
+      <label><input type="checkbox" id="o-face" checked> <span data-t="faceopt">Gesicht</span></label>
       <label><span data-t="bg">Hintergrund</span> <input type="color" id="o-bg" value="#20242c"></label>
       <button id="b-center" data-t="center">Zentrieren</button>
+      <span class="seg"><button data-look="front" data-t="v_front">Vorne</button><button data-look="side" data-t="v_side">Seite</button><button data-look="back" data-t="v_back">Hinten</button><button data-look="top" data-t="v_top">Oben</button></span>
       <button id="b-shot" data-t="shot">Bild speichern</button>
     </div>
     <div id="timeline">
@@ -55,10 +60,11 @@
       <label><span data-t="speed">Tempo</span>
         <select id="t-speed"><option>0.1</option><option>0.25</option><option>0.5</option><option selected>1</option><option>1.5</option><option>2</option></select></label>
       <label><input type="checkbox" id="t-loop" checked> <span data-t="loop">Schleife</span></label>
+      <label><input type="checkbox" id="t-chain" checked> <span data-t="chain">danach Idle (wie im Spiel)</span></label>
     </div>
   </section>
   <aside id="right">
-    <nav class="tabs"><button data-tab="info" class="on" data-t="t_info">Info</button><button data-tab="anim" data-t="t_anim">Animationen</button><button data-tab="tex" data-t="t_tex">Texturen</button><button data-tab="exp" data-t="t_exp">Export</button></nav>
+    <nav class="tabs"><button data-tab="info" class="on" data-t="t_info">Info</button><button data-tab="anim" data-t="t_anim">Animationen</button><button data-tab="tex" data-t="t_tex">Texturen</button><button data-tab="exp" data-t="t_exp">Export</button><button data-tab="dbg" data-t="t_dbg">Debug</button></nav>
     <div class="tab" id="tab-info"><div id="info" class="dim" data-t="noselect">Kein Modell gewählt.</div></div>
     <div class="tab hidden" id="tab-anim">
       <div id="anims"></div>
@@ -67,6 +73,15 @@
     </div>
     <div class="tab hidden" id="tab-tex"><div id="texs"></div>
       <p class="small dim" data-t="hdnote">HD: eigene PNG je Texturseite, beliebige Größe (z. B. 2048 × 4096), ohne Farbreduzierung. Wird für dieses Modell gespeichert und beim nächsten Öffnen wieder geladen.</p></div>
+    <div class="tab hidden" id="tab-dbg">
+      <div class="row"><button id="dbg-all" data-t="d_all">Alle zeigen</button><button id="dbg-only" data-t="d_only">Nur Auswahl</button><button id="dbg-none" data-t="d_clear">Auswahl aufheben</button></div>
+      <div id="dbg-bones" class="bones"></div>
+      <div id="dbg-info" class="small"></div>
+      <div class="row"><label><span data-t="d_page">Texturseite</span> <select id="dbg-page"></select></label>
+        <label><input type="checkbox" id="dbg-alluv"> <span data-t="d_alluv">alle UVs</span></label></div>
+      <canvas id="dbg-uv" width="512" height="512"></canvas>
+      <button data-exp="debug" data-t="e_dbg">Debug-Daten als JSON exportieren</button>
+    </div>
     <div class="tab hidden" id="tab-exp">
       <button data-exp="glb" data-t="e_glb">glTF/GLB (Skelett + alle Animationen)</button>
       <button data-exp="obj" data-t="e_obj">OBJ + MTL + PNG (Ruhepose)</button>
@@ -74,6 +89,7 @@
       <button data-exp="motions" data-t="e_mot">Animationen als JSON (30 Bilder/s)</button>
       <button data-exp="json" data-t="e_json">Technische Daten als JSON</button>
       <button data-exp="hd" data-t="e_hd">HD-Texturen dieses Modells</button>
+      <button data-exp="debug" data-t="e_dbg">Debug-Daten als JSON exportieren</button>
       <div id="exp-msg" class="small dim"></div>
     </div>
   </aside>
