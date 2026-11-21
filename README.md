@@ -25,7 +25,7 @@ image. No game data included; the image is never changed.*
 - Deutsch / Englisch (folgt der Systemsprache, umschaltbar).
 
 ## Start
-**Windows:** Paket aus den GitHub-Actions-Artefakten entpacken, `DW3_DW2003_Viewer.exe` starten, „Abbild öffnen“.
+**Windows:** [Neueste Version unter Releases](https://github.com/emrah1818/DW3-DW2003-VIEWER/releases/latest) – `DW3_DW2003_Viewer_Windows_x64.zip` entpacken, `DW3_DW2003_Viewer.exe` starten, „Abbild öffnen“. Nichts muss installiert werden ([ANLEITUNG.md](ANLEITUNG.md)).
 
 **Aus dem Quellcode** (Python 3.12, C++17-Compiler):
 ```

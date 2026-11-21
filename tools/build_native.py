@@ -15,7 +15,7 @@ if not cxx:
     raise SystemExit('C++17-Compiler fehlt: MSVC Build Tools oder GCC installieren.')
 target = out / ('dw3_converter.exe' if os.name == 'nt' else 'dw3_converter')
 if Path(cxx).name.lower() in ('cl', 'cl.exe'):
-    cmd = [cxx, '/nologo', '/std:c++17', '/EHsc', '/O2', '/I' + str(source), *sources, '/Fe:' + str(target)]
+    cmd = [cxx, '/nologo', '/std:c++17', '/EHsc', '/O2', '/MT', '/I' + str(source), *sources, '/Fe:' + str(target)]
 else:
     cmd = [cxx, '-std=c++17', '-O2', '-I' + str(source), *sources, '-o', str(target)]
     if os.name == 'nt':
