@@ -6,6 +6,11 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Release tag to publish after a successful build (e.g. v0.1.0); empty = build only'
+        required: false
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -59,8 +64,9 @@ jobs:
             SHA256SUMS.txt
             smoke.json
   release:
-    # a tag v* publishes the tested Windows package as a GitHub release (never replaces an existing one)
-    if: startsWith(github.ref, 'refs/tags/v')
+    # publishes the tested Windows package as a GitHub release (never replaces an existing one): a pushed tag v*,
+    # or a manual run with the input "release"
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release != '')
     needs: windows
     runs-on: ubuntu-latest
     permissions:
@@ -75,11 +81,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${{ inputs.release }}"
+          [ -n "$tag" ] || tag="${GITHUB_REF_NAME}"
+          case "$tag" in v[0-9]*) ;; *) echo "bad tag $tag"; exit 1;; esac
           notes="docs/release_notes/${tag}.md"
           test -f "$notes"
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "Release $tag exists, not replaced"; exit 1; fi
           mv assets/smoke.json assets/windows-smoke.json
           gh release create "$tag" assets/DW3_DW2003_Viewer_Windows_x64.zip assets/SHA256SUMS.txt assets/windows-smoke.json \
-            --repo "$GITHUB_REPOSITORY" --title "DW3 / DW2003 Viewer ${tag#v}" --notes-file "$notes" --latest
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "DW3 / DW2003 Viewer ${tag#v}" --notes-file "$notes" --latest
           gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,assets -q '.tagName, (.assets[].name)'
