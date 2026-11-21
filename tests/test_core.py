@@ -231,13 +231,17 @@ def test_graphics_falls_back_after_crash_while_drawing(tmp_path):
     g = Graphics(tmp_path)
     assert g.backend == FALLBACK[0]
     g.mark('ready')
-    g2 = Graphics(tmp_path)                       # unclean end before any model was drawn: no switch
+    g2 = Graphics(tmp_path)                       # unclean end after the view was ready, nothing drawn: no switch
     assert g2.backend == FALLBACK[0] and g2.switched_from is None
-    g2.mark('drawing')                            # crash while drawing
+    g2.mark('ready'); g2.mark('drawing')           # crash while drawing
     g3 = Graphics(tmp_path)
     assert g3.backend == FALLBACK[1] and g3.switched_from == FALLBACK[0]
-    g3.mark('drawing'); g3.mark('drawn'); g3.clean_exit()
+    g3.mark('ready'); g3.mark('drawing'); g3.mark('drawn'); g3.clean_exit()
     assert Graphics(tmp_path).backend == FALLBACK[1]          # a working backend is kept
     Graphics(tmp_path).set_choice(FALLBACK[0])
     assert Graphics(tmp_path).backend == FALLBACK[0]
-    assert Graphics(tmp_path, forced='swiftshader').backend == 'swiftshader'
+    assert Graphics(tmp_path, forced=FALLBACK[-1]).backend == FALLBACK[-1]
+    Graphics(tmp_path).set_choice('auto')
+    (tmp_path / 'gpu_state.json').unlink()
+    g5 = Graphics(tmp_path)                       # hangs before the view is ready: next start switches too
+    assert g5.backend == FALLBACK[0] and Graphics(tmp_path).switched_from == FALLBACK[0]

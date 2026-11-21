@@ -52,12 +52,14 @@ jobs:
           $p = Start-Process -FilePath dist\DW3_DW2003_Viewer\DW3_DW2003_Viewer.exe -ArgumentList '--smoke-test=smoke.json' -PassThru -Wait
           Get-Content smoke.json
           $code = $p.ExitCode
-          foreach ($b in 'd3d11', 'gl', 'd3d11on12', 'swiftshader') {
-            $q = Start-Process -FilePath dist\DW3_DW2003_Viewer\DW3_DW2003_Viewer.exe -ArgumentList "--smoke-test=smoke_$b.json", "--angle=$b" -PassThru -Wait
+          foreach ($b in 'd3d11', 'd3d11on12', 'warp', 'gl') {
+            $q = Start-Process -FilePath dist\DW3_DW2003_Viewer\DW3_DW2003_Viewer.exe -ArgumentList "--smoke-test=smoke_$b.json", "--angle=$b" -PassThru
+            if (-not $q.WaitForExit(90000)) { Stop-Process -Id $q.Id -Force; Write-Host "== $b hangs (stopped)" }
             Write-Host "== $b exit $($q.ExitCode)"; if (Test-Path "smoke_$b.json") { Get-Content "smoke_$b.json" }
             Get-Content "$env:LOCALAPPDATA\DW3-DW2003-Viewer\logs\viewer.log" -ErrorAction SilentlyContinue | Select-Object -Last 15
           }
           Get-ChildItem "$env:LOCALAPPDATA\DW3-DW2003-Viewer\logs" -ErrorAction SilentlyContinue
+          foreach ($b in 'd3d11', 'd3d11on12', 'warp') { if (-not (Test-Path "smoke_$b.json") -or -not ((Get-Content "smoke_$b.json" | ConvertFrom-Json).ok)) { Write-Host "$b failed"; $code = 1 } }
           if ($code -ne 0) { exit 1 }
       - name: Package
         shell: pwsh

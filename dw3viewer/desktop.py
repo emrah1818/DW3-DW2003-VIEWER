@@ -13,7 +13,7 @@ from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
 from PyQt6.QtWebEngineWidgets import QWebEngineView
 
 from . import __version__
-from .gpu import Graphics, setup_logging, log
+from .gpu import Graphics, setup_logging, log, BACKENDS
 from .server import API, make_server, user_dir
 
 GERMAN = (QLocale.system().uiLanguages() or ['en'])[0].lower().startswith('de')
@@ -138,7 +138,10 @@ def main(argv=None):
     data.mkdir(parents=True, exist_ok=True)
     logs = setup_logging(data)
     if os.environ.get('DW3_SOFTWARE_GL') and not forced:
-        forced = 'swiftshader'      # PCs without a working GPU driver
+        from .gpu import SOFTWARE
+        forced = SOFTWARE           # PCs without a working GPU driver
+    if forced and forced not in BACKENDS:
+        forced = None
     gpu = Graphics(data, forced)
     log.info('DW3 / DW2003 Viewer %s, Python %s, %s; Grafik %s (Wahl %s)', __version__, sys.version.split()[0],
              sys.platform, gpu.backend, gpu.choice)

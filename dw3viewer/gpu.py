@@ -16,14 +16,23 @@ import threading
 import time
 from pathlib import Path
 
-BACKENDS = {
-    'd3d11': {'flags': ['--use-angle=d3d11'], 'label': 'Direct3D 11'},
-    'gl': {'flags': ['--use-angle=gl'], 'label': 'OpenGL'},
-    'd3d11on12': {'flags': ['--use-angle=d3d11on12'], 'label': 'Direct3D 11 über 12'},
-    'swiftshader': {'flags': ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
-                    'label': 'Software (SwiftShader, langsam)'},
-}
-FALLBACK = ['d3d11', 'gl', 'd3d11on12', 'swiftshader'] if os.name == 'nt' else ['gl', 'swiftshader']
+_IGN = ['--ignore-gpu-blocklist']   # otherwise Chromium refuses WebGL on blocklisted drivers (and on WARP)
+if os.name == 'nt':
+    BACKENDS = {
+        'd3d11': {'flags': ['--use-angle=d3d11'] + _IGN, 'label': 'Direct3D 11'},
+        'gl': {'flags': ['--use-angle=gl'] + _IGN, 'label': 'OpenGL'},
+        'd3d11on12': {'flags': ['--use-angle=d3d11on12'] + _IGN, 'label': 'Direct3D 11 über 12'},
+        'warp': {'flags': ['--use-angle=d3d11-warp'] + _IGN, 'label': 'Software (WARP, langsamer)'},
+    }
+    FALLBACK = ['d3d11', 'gl', 'd3d11on12', 'warp']
+else:
+    BACKENDS = {
+        'gl': {'flags': _IGN, 'label': 'OpenGL'},
+        'swiftshader': {'flags': ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] + _IGN,
+                        'label': 'Software (SwiftShader, langsamer)'},
+    }
+    FALLBACK = ['gl', 'swiftshader']
+SOFTWARE = FALLBACK[-1]
 CHOICES = ['auto'] + FALLBACK
 
 log = logging.getLogger('dw3viewer')
@@ -75,16 +84,18 @@ class Graphics:
         self.switched_from = None
         if self.choice == 'auto':
             backend = state.get('backend') if state.get('backend') in FALLBACK else FALLBACK[0]
-            if state and not state.get('clean', True) and state.get('drawing'):
+            # the last session ended without a clean exit while drawing, or before the view was even ready (hang)
+            if state and not state.get('clean', True) and (state.get('drawing') or not state.get('ready')):
                 k = FALLBACK.index(backend)
                 if k + 1 < len(FALLBACK):
                     self.switched_from = backend
                     backend = FALLBACK[k + 1]
-                    log.warning('Letzte Sitzung mit %s ist beim Zeichnen abgestürzt; wechsle zu %s', self.switched_from, backend)
+                    log.warning('Letzte Sitzung mit %s ist abgestürzt (zeichnete: %s); wechsle zu %s',
+                                self.switched_from, bool(state.get('drawing')), backend)
             self.backend = backend
         else:
             self.backend = self.choice
-        self.state = {'backend': self.backend, 'clean': False, 'drawing': False, 'started': time.time(),
+        self.state = {'backend': self.backend, 'clean': False, 'drawing': False, 'ready': False, 'started': time.time(),
                       'pid': os.getpid(), 'gl': None, 'ok_backend': state.get('ok_backend')}
         self._write(self.state_file, self.state)
 
@@ -109,7 +120,9 @@ class Graphics:
 
     # called from the interface
     def mark(self, what, gl=None):
-        if what == 'drawing':
+        if what == 'ready':
+            self.state['ready'] = True
+        elif what == 'drawing':
             self.state['drawing'] = True
         elif what == 'drawn':                  # a model was drawn and the next frames came through
             self.state['ok_backend'] = self.backend
